@@ -1,27 +1,22 @@
 require 'oystercard'
 RSpec.describe Oystercard do
   subject(:oystercard) { described_class.new }
+  let(:station_name){double :station_name}
 
-    it { is_expected.to(respond_to(:top_up).with(1).argument) }
-    it { is_expected.to(respond_to(:deduct).with(1).argument) }
+  it { is_expected.to(respond_to(:top_up).with(1).argument) }
 
   context 'Balance' do
-    it "the balance is zero" do
+    it 'the balance is zero' do
       expect(oystercard.balance).to eq(0)
     end
 
-    it "can top up the balance" do
-      expect{ oystercard.top_up (1) }.to change{ oystercard.balance }.by (1)
+    it 'can top up the balance' do
+      expect { oystercard.top_up 1 }.to change { oystercard.balance }.by 1
     end
 
-    it "raises an error if the maximum balance is exceeded" do
-      maximum_balance = Oystercard::MAXIMUM_BALANCE
-      oystercard.top_up(maximum_balance)
-      expect{ oystercard.top_up(1) }.to raise_exception "Error: maximum balance of #{maximum_balance} exceeded"
-    end
-
-    it "can deduct money from the balance" do
-      expect{ oystercard.deduct (1) }.to change{ oystercard.balance }.by (-1)
+    it 'raises an error if the maximum balance is exceeded' do
+      oystercard.top_up(Oystercard::MAXIMUM_BALANCE)
+      expect { oystercard.top_up(1) }.to raise_exception "Error: maximum balance of #{Oystercard::MAXIMUM_BALANCE} exceeded"
     end
   end
 
@@ -30,8 +25,21 @@ RSpec.describe Oystercard do
       expect(oystercard).not_to be_in_journey
     end
 
+    it 'remembers the entry station' do
+      oystercard.top_up(10)
+      oystercard.touch_in(station_name)
+      expect(oystercard.entry_station).to eq station_name
+    end
+  end
+
+  it 'knows what station_name is' do
+    expect(station_name).to eq station_name
+  end
+
+  context 'touch_in/out' do
     it 'can touch in' do
-      oystercard.touch_in
+      oystercard.top_up(10)
+      oystercard.touch_in(station_name)
       expect(oystercard).to be_in_journey
     end
 
@@ -40,15 +48,14 @@ RSpec.describe Oystercard do
       expect(oystercard).not_to be_in_journey
     end
 
-    it 'will not touch in if below minimum balance' do
-      expect{ oystercard.touch_in }.to raise_error "Insufficient balance to touch in"
+    it 'raises an error if card does not have minimum balance' do
+      expect { oystercard.touch_in(station_name) }.to raise_error 'Cannot touch in: minimum balance not met'
+    end
+
+    it 'deducts the mimimum balance from the card balance' do
+      oystercard.top_up Oystercard::CARD_MIN_BALANCE
+      oystercard.touch_in(station_name)
+      expect { oystercard.touch_out }.to change { oystercard.balance }.by -Oystercard::CARD_MIN_BALANCE
     end
   end
 end
-=begin
-   it 'raises an error if card does not have minimum balance' do
-      card_min_balance = Oystercard::CARD_LIMIT
-      oystercard.touch_in
-      expect{ oystercard.touch_in}.to raise_error 'Cannot touch in: minimum balance not met'
-    end
-=end
