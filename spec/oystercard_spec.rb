@@ -7,7 +7,7 @@ RSpec.describe Oystercard do
 
   it { is_expected.to(respond_to(:top_up).with(1).argument) }
 
-  context 'Balance' do
+  context 'BALANCE' do
     it 'the balance is zero' do
       expect(oystercard.balance).to eq(0)
     end
@@ -22,7 +22,7 @@ RSpec.describe Oystercard do
     end
   end
 
-  context 'journey' do
+  context 'JOURNEY' do
     it 'is initially not in a journey' do
       expect(oystercard).not_to be_in_journey
     end
@@ -46,11 +46,23 @@ RSpec.describe Oystercard do
     end
   end
 
-  context 'touch_in/out' do
+  context 'TOUCH IN/OUT' do
     it 'can touch in' do
       oystercard.top_up(10)
       oystercard.touch_in(entry_station)
       expect(oystercard).to be_in_journey
+    end
+
+    it 'penalty if did not touch out' do
+      oystercard.top_up(20)
+      subject.touch_in(entry_station)
+      expect { subject.touch_in(entry_station) }.to change { oystercard.balance }.by(-Oystercard::PENALTY )
+    end
+
+    it 'penalty if did not touch in' do
+      oystercard.top_up(20)
+      oystercard.touch_out(exit_station)
+      expect { oystercard.touch_out(exit_station) }.to change { oystercard.balance }.by(-Oystercard::PENALTY)
     end
 
     it 'can touch out' do
